@@ -85,7 +85,5 @@ def plant_clique(G, label_to_node, node_to_label):
 
 
 if __name__ == '__main__':
-    #for i in range(10, 51):
-    print(nx.__version__)
     generate_graph(4, 0.1)
 
