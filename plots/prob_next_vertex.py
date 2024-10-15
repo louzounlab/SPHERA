@@ -126,7 +126,7 @@ def data_for_plot_prob_next(num_runs, gate, p=0.3, num_k=3, first_k=9, with_h=Fa
                     all_probs[k] = [probs]
 
     # Save all_probs to a pickle file
-    with open(f'all_probs_{p}_{with_h}.pkl', 'wb') as f:
+    with open(f'all_probs_{p}_h={with_h}_gate={gate}.pkl', 'wb') as f:
         pickle.dump(all_probs, f)
     # Calculate the probabilities (mean/std) across all k values
     aggregated_probs = aggregate_probabilities(all_probs)
@@ -143,15 +143,20 @@ def plot_function_prob(p, t_min, t_max, gate=True):
     # Extract values for each k
     def extract_values(data_dict, k):
         x_values = list(data_dict.keys())
-        y_values = [v[k][0] for v in data_dict.values()]
-        y_std = [v[k][1] for v in data_dict.values()]
+        y_values = [v.get(k, (None, None))[0] for v in data_dict.values()]  # Extract means for each k, default to None
+        # if k is not found
+        y_std = [v.get(k, (None, None))[1] for v in data_dict.values()]  # Extract std for each k, default to None if k
+        # is not found
         filtered_x = [x for x, y in zip(x_values, y_values) if y is not None]
         filtered_y = [y for y in y_values if y is not None]
         filtered_std = [std for std in y_std if std is not None]
         return filtered_x, filtered_y, filtered_std
 
-    aggregated_probs = data_for_plot_prob_next(2, gate, p, num_k=3, first_k=9, with_h=False)
-
+    aggregated_probs = data_for_plot_prob_next(300, gate, p, num_k=3, first_k=9, with_h=False)
+    # with open(f'all_probs_{p}_h=False_gate={gate}.pkl', 'rb') as f:
+    #     all_probs = pickle.load(f)
+    # # Calculate the probabilities (mean/std) across all k values
+    # aggregated_probs = aggregate_probabilities(all_probs)
     # Get k-specific data
     x_9, y_9, std_9 = extract_values(aggregated_probs, 9)
     x_10, y_10, std_10 = extract_values(aggregated_probs, 10)
@@ -253,6 +258,10 @@ def plot_function_prob_with_h(p, t_min, t_max, h_min, h_max, gate=True):
     h_values = np.arange(h_min, h_max + 1)
     first_k = 9
     data_dict = data_for_plot_prob_next(2, gate, p, num_k=2, first_k=first_k, with_h=True)
+    # Save all_probs to a pickle file
+    # with open(f'all_probs_{p}_h=True_gate={gate}.pkl', 'rb') as f:
+    #     data_dict = pickle.load(f)
+    print(data_dict)
     most_common_t, most_common_h = merge_and_find_most_common(data_dict[first_k], data_dict[first_k + 1], first_k,
                                                               first_k + 1)
     print(most_common_t)
@@ -283,5 +292,8 @@ def plot_function_prob_with_h(p, t_min, t_max, h_min, h_max, gate=True):
 
 
 if __name__ == '__main__':
-    plot_function_prob(0.3, 0, 10)
-    plot_function_prob_with_h(0.3, 0, 10, 0, 10)
+    #check comments of pickle
+    #plot_function_prob(0.3, 0, 10, gate=True)
+    #plot_function_prob(0.3, 0, 10, gate=False)
+    plot_function_prob_with_h(0.3, 0, 10, 0, 10, False)
+    #plot_function_prob_with_h(0.3, 0, 10, 0, 10, True)
