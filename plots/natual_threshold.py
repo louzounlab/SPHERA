@@ -2,12 +2,15 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
+from matplotlib import gridspec
+from plots import greedy_percentage, real_graph_plots
 
 # Setting font properties for consistent styling in the plot
 font = FontProperties()
 font.set_family('serif')
 font.set_name('Times New Roman')
-font.set_style('italic')
+font_size = 20
+font.set_size(font_size)
 
 
 def calculate_k_max(num_nodes, p):
@@ -89,20 +92,44 @@ def plot_for_p(p, range_k, place):
         k_max_rainbow.append(rainbow_clique(k, nodes_per_color, p))
 
     # Plot the results
-    place.plot(k_values, k_max_values, label="max clique")
-    place.plot(k_values, k_values)
-    place.plot(k_values, k_max_rainbow, label="max rainbow clique")
+    place.plot(k_values, k_max_values, label="Max clique", color='red')
+    place.plot(k_values, k_values, label="X=Y", color='blue')
+    place.plot(k_values, k_max_rainbow, label="Max rainbow clique", color='green')
+    for i, value in enumerate(k_max_values):
+        if i == round(value):
+            first_match_values = i
+            break
+    for i, value in enumerate(k_max_rainbow):
+        if i == round(value):
+            first_match_rainbow = i
+            break
 
     # Set plot labels, title, and grid
-    place.set_xlabel('K', fontproperties=font, fontsize=20)
-    place.set_ylabel(f'K_max', fontproperties=font, fontsize=20)
-    place.legend()
-    place.set_xticks(np.arange(2, len(k_values), 2))
-    place.set_yticks(np.arange(2, len(k_values), 2))
-    place.set_title(f'p = {p}', fontproperties=font, fontsize=20)
-    place.set_xlim(0, 25)
-    place.set_ylim(0, 25)
+    # place.set_xlabel('K \n (a)' if p == 0.3 else 'K', fontproperties=font)
+    place.set_ylabel(f'K Max', fontproperties=font)  # if p == 0.1 else None
+    place.set_xlabel(f"Number of colors", fontproperties=font) if p == 0.5 else None
+    legend_font = FontProperties()
+    legend_font.set_family('serif')
+    legend_font.set_name('Times New Roman')
+    font_size_legend = 16
+    legend_font.set_size(font_size_legend)
+    place.legend(prop=legend_font, loc='upper left') if p == 0.1 else None
+    # place.set_xticks(np.arange(2, range_k, 2))
+    # if p != 0.5:
+    place.set_xticklabels([])
+    # place.set_xticklabels(place.get_xticks(), fontproperties=font)  # Set font for X-axis tick labels
+    place.set_yticklabels(place.get_yticks(), fontproperties=font)
+    place.set_yticks(np.arange(2, range_k, 5))
+    ytick_labels = place.get_yticks()
+    place.set_yticklabels(ytick_labels, fontproperties=font)
+    place.set_title(f'p = {p}', fontproperties=font)
+    place.set_xlim(0, range_k)
+    place.set_ylim(0, range_k)
     place.grid(True)
+    threshold = min(first_match_rainbow, first_match_values)
+    place.axvline(x=threshold, color='black', linestyle='--')
+    return threshold
+
 
 
 def main():
@@ -113,17 +140,41 @@ def main():
     for both the maximum clique and rainbow clique for various edge probabilities.
     """
     # Create a 1x3 subplot grid
-    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-
+    fig = plt.figure(figsize=(15, 20))
+    gs = gridspec.GridSpec(4, 2, figure=fig)
+    axs = [fig.add_subplot(gs[i, 0]) for i in range(3)] + [fig.add_subplot(gs[i, 1]) for i in range(3)]
     # Generate and plot for different values of p (0.1, 0.3, 0.5)
-    plot_for_p(0.1, 50, axs[0])
-    plot_for_p(0.3, 50, axs[1])
-    plot_for_p(0.5, 50, axs[2])
+    greedy_percentage.plot_gnp_results(axs[3:6])
+    threshold1 = plot_for_p(0.1, 50, axs[0])
+    threshold2 = plot_for_p(0.3, 50, axs[1])
+    threshold3 = plot_for_p(0.5, 50, axs[2])
+    threshold = [threshold1, threshold2, threshold3]
+    # Determine global limits
+    x_ranges_1 = (3, 21)
+    x_ranges_2 = (3, 31)
+    # Apply global limits to all subplots
+    for i in range(6):
+        x_range = x_ranges_1 if i == 0 or i == 3 else x_ranges_2
+        axs[i].set_xlim(x_range)
+        if i < 3:
+            axs[i].set_ylim(x_range)
+            axs[i].set_xticks(range(5, x_range[1] + 1, 5))
+            axs[i].set_xticklabels(axs[i].get_xticks(), fontproperties=font)
+            axs[i].set_yticks(range(5, x_range[1] + 1, 5))
+            axs[i].set_yticklabels(axs[i].get_yticks(), fontproperties=font)
+    for i in [3, 4, 5]:
+        axs[i].axvline(x=threshold[i - 3], color='black', linestyle='--')
 
+    all_cliques, _, graph_names_short = real_graph_plots.time_and_percentage_data()
+    print(all_cliques)
+    axs_last_row = fig.add_subplot(gs[3, :])  # Last row, spanning both columns
+    real_graph_plots.subplot_boxplot(axs_last_row, all_cliques, graph_names_short, "left")
     # Adjust layout and display the plot
     plt.tight_layout()
+    plt.savefig("Fig3.pdf", format="pdf")
     plt.show()
 
 
 if __name__ == '__main__':
     main()
+

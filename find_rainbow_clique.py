@@ -6,7 +6,8 @@ import random
 import process_graph
 
 
-def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nodes, skip_nodes, found_cliques=[]):
+def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nodes, skip_nodes, found_cliques=[],
+                  start_time=None, timeout=600):
     """
     The Bron-Kerbosch algorithm for finding maximal cliques in a graph.
 
@@ -17,8 +18,15 @@ def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nod
     :param remaining_nodes: Nodes still available for inclusion in the clique.
     :param skip_nodes: Nodes already processed.
     :param found_cliques: List of cliques found so far.
-    :return: List of all cliques found in the graph.
+    :param start_time: The time the function started (used for timeout).
+    :param timeout: Maximum allowed time in seconds before stopping (default is 600 seconds).
+    :return: List of all cliques found in the graph up to the timeout.
     """
+    if start_time is None:
+        start_time = time.time()
+    # Check for timeout, stop and return found cliques if timeout reached
+    if time.time() - start_time > timeout:
+        return found_cliques
     # Base case: no more remaining nodes and no nodes to skip, so add the clique to the list
     if len(remaining_nodes) == 0 and len(skip_nodes) == 0:
         found_cliques.append(potential_clique)
@@ -29,13 +37,17 @@ def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nod
         return found_cliques
 
     for node in remaining_nodes:
+        if time.time() - start_time > timeout:
+            return found_cliques
         # Extend the current potential clique by adding the current node
         new_potential_clique = potential_clique + [node]
         new_remaining_nodes = [n for n in remaining_nodes if n in list(graph.neighbors(node))]
         # Recalculate the remaining nodes and skip list based on neighbors of the current node
         new_skip_list = [n for n in skip_nodes if n in list(graph.neighbors(node))]
-        found_cliques = bron_kerbosch(graph, labels, label_to_node_, new_potential_clique, new_remaining_nodes,
-                                      new_skip_list, found_cliques)
+        found_cliques = bron_kerbosch(
+            graph, labels, label_to_node_, new_potential_clique, new_remaining_nodes,
+            new_skip_list, found_cliques, start_time, timeout
+        )
         # If we found a maximal clique (with all labels), return early
         if len(found_cliques[-1]) == len(label_to_node_):
             return found_cliques
@@ -48,8 +60,8 @@ def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nod
 
 
 def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potential_clique, remaining_nodes,
-                        added_labels, nodes_in_label_degree, max_cliques_founded=[], gate_change=True, start_time=None,
-                        time_limit=600, gate=False, greedy_size=0, first=True):
+                        added_labels, nodes_in_label_degree, name, max_cliques_founded=[], gate_change=True, start_time=None,
+                        time_limit=600, greedy=False, gate=False, greedy_size=0, first=True):
     """
     Fixed-order algorithm for finding max rainbow clique.
 
@@ -71,12 +83,19 @@ def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potent
     :return: The largest clique found, the size of the greedy clique, and updated control flags.
 
      """
+    if name is None:
+        filename = f"all_way_clique_{len(labels_list)}.txt"
+    else:
+        filename = f"all_way_clique_{name}.txt"
     # Write to a file all the partial cliques found for analyzing.
-    with open(f"all_way_clique_{len(labels_list)}.txt", 'a') as f:
+    with open(filename, 'a') as f:
         f.write(f"{potential_clique}\n")
     # Check if the time limit has been exceeded
     if time.time() - start_time > time_limit:
         print("Time limit exceeded")
+        return max_cliques_founded, greedy_size, first, gate
+    # Search by greedy method and greedy method got stopped
+    if greedy and greedy_size > 0:
         return max_cliques_founded, greedy_size, first, gate
     # Check if the current clique is complete or no more nodes are available
     if len(potential_clique) == len(labels_list) or len(remaining_nodes) == 0:
@@ -84,7 +103,6 @@ def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potent
     # check if found better clique than could be found
     # future_possible_labels = [node_to_label[n] for n in remaining_nodes]
     # if len(set(future_possible_labels)) + len(added_labels) <= len(max_cliques_founded):
-    #     print("bbb")
     #     return max_cliques_founded, greedy_size, first, gate
     # Determine the next label to work on (i.e., label not yet added to the clique)
     next_label = -1
@@ -105,6 +123,10 @@ def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potent
             # Greedy approach failed, save the greedy clique size.
             greedy_size = len(potential_clique)
             first = False
+            # Search by greedy method
+            if greedy:
+                max_cliques_founded = potential_clique
+                return max_cliques_founded, greedy_size, first, gate
         if gate_change is True:
             # From the point greedy failed, add the check of the gate.
             gate = True
@@ -119,6 +141,10 @@ def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potent
                 # Greedy approach failed, save the greedy clique size.
                 greedy_size = len(potential_clique)
                 first = False
+                # Search by greedy method
+                if greedy:
+                    max_cliques_founded = potential_clique
+                    return max_cliques_founded, greedy_size, first, gate
             if gate_change is True:
                 # From the point greedy failed, add the check of the gate.
                 gate = True
@@ -140,18 +166,19 @@ def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potent
                 cliques_founded, greedy_size, first, gate = fixed_order_barrier(graph, node_to_label, label_to_node,
                                                                                 labels_list, new_potential_clique,
                                                                                 new_remaining_nodes, new_added_labels,
-                                                                                nodes_in_label_degree,
+                                                                                nodes_in_label_degree, name,
                                                                                 max_cliques_founded, gate_change,
-                                                                                start_time, time_limit, gate,
+                                                                                start_time, time_limit, greedy, gate,
                                                                                 greedy_size, first)
         else:
             # Proceed without gate conditions
             cliques_founded, greedy_size, first, gate = fixed_order_barrier(graph, node_to_label, label_to_node,
                                                                             labels_list, new_potential_clique,
                                                                             new_remaining_nodes, new_added_labels,
-                                                                            nodes_in_label_degree, max_cliques_founded,
-                                                                            gate_change, start_time, time_limit, gate,
-                                                                            greedy_size, first)
+                                                                            nodes_in_label_degree, name,
+                                                                            max_cliques_founded,
+                                                                            gate_change, start_time, time_limit, greedy,
+                                                                            gate, greedy_size, first)
         # If the clique found has all the labels, return it
         if len(cliques_founded) == len(labels_list):
             return cliques_founded, greedy_size, first, gate
@@ -184,9 +211,9 @@ def degree_nodes_in_label(graph, label_to_node, label):
     return ordered_nodes
 
 
-def sphere(graph, node_to_label, label_to_node, heuristic=True, gate_change=True, time_limit=600):
+def sphera(graph, node_to_label, label_to_node, heuristic=True, gate_change=True, time_limit=600, greedy=False, name=None):
     """
-    Detection of max rainbow clique using the SPHERE algorithm.
+    Detection of max rainbow clique using the SPHERA algorithm.
 
     :param graph: Input graph
     :param node_to_label: Dictionary mapping nodes to labels
@@ -200,6 +227,27 @@ def sphere(graph, node_to_label, label_to_node, heuristic=True, gate_change=True
     start_time = time.time()
     # Get all labels in the graph
     all_labels = list(label_to_node.keys())
+    to_remove = {}
+    num_labels = len(all_labels)
+    if gate_change:
+        for v in list(graph.nodes):
+            if v in graph.nodes:
+                neighbor_labels = {node_to_label[neighbor] for neighbor in graph.neighbors(v) if neighbor in node_to_label}
+                if len(neighbor_labels) < num_labels - 1:
+                    label_v = node_to_label[v]
+                    if label_v not in to_remove:
+                        to_remove[label_v] = []
+                    to_remove[label_v].append(v)
+                    node_to_label.pop(v, None)
+                    graph.remove_node(v)
+        for label in to_remove:
+            set_label = set(to_remove[label])
+            current = label_to_node[label]
+            update = [node for node in current if node not in set_label]
+            label_to_node[label] = update
+        if len(node_to_label) == num_labels and is_clique(graph, graph.nodes, label_to_node, node_to_label):
+            clique = list(label_to_node.values())
+            return clique, -1
     if heuristic:
         # Calculate the average degree of nodes for each label
         average_rank = {label: np.mean(list(graph.degree(label_to_node[label])))
@@ -225,7 +273,7 @@ def sphere(graph, node_to_label, label_to_node, heuristic=True, gate_change=True
     # Call the 'fixed_order_barrier' function to construct the clique
     cliques_founded, greedy_size, _, gate = fixed_order_barrier(
         graph, node_to_label, label_to_node, labels_degree, [], list(graph.nodes()), [],
-        nodes_in_label_degree, [], gate_change, start_time, time_limit
+        nodes_in_label_degree, name, [], gate_change, start_time, time_limit, greedy, name
     )
     if greedy_size == 0:
         # If the greedy method detected the entire clique, set greedy_size to the size of clique.
@@ -276,7 +324,7 @@ def parse_args():
     and nodes per color), and options for heuristic search and gate usage.
 
     For GNP graphs, 'k' (number of classes), 'p' (edge probability), and 'nodes_per_color'
-    (number of nodes per color) are used, while for real graphs, edge and label files must be
+    (number of nodes per color) are used, while for real_graphs, edge and label files must be
     specified.
 
     :return: args: Parsed arguments containing graph type, parameters, and flags for options.
@@ -341,7 +389,7 @@ def main():
          for node labeling. It constructs the graph using real-world data, assigns labels to the nodes (either by
          coloring or via a label file), and optionally plants a clique in the graph.
 
-    3. Clique Detection: After loading or generating the graph, it calls the `sphere()` function to find the maximum
+    3. Clique Detection: After loading or generating the graph, it calls the `sphera()` function to find the maximum
     rainbow clique, utilizing optional heuristic and gate parameters as specified by the user.
 
     4. Output: The function prints the maximum rainbow clique found in the graph.
@@ -384,8 +432,8 @@ def main():
         print("Error: You must specify the type of graph.")
         return
     print("s")
-    # Call the sphere function to find the maximum rainbow clique with the specified parameters
-    max_rainbow_clique, _ = sphere(updated_graph, node_to_label, label_to_node, args.heuristic, args.gate)
+    # Call the sphera function to find the maximum rainbow clique with the specified parameters
+    max_rainbow_clique, _ = sphera(updated_graph, node_to_label, label_to_node, args.heuristic, args.gate)
     # Output the found clique
     print("Clique found:", max_rainbow_clique)
 

@@ -72,7 +72,7 @@ def color_nodes(graph, nodes_per_color=None):
     """
     if nodes_per_color is None:
         average_degree = 2 * graph.number_of_edges() / graph.number_of_nodes()
-        num_colors = average_degree
+        num_colors = int(average_degree)
     else:
         num_colors = int(graph.number_of_nodes() / nodes_per_color)
     node_to_label = {}
