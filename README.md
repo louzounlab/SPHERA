@@ -110,7 +110,7 @@ Where:
 
 Returns: the vertices in the maximum rainbow clique.
 
-#### UMAT with uncertainty
+#### G(n, p) graphs
 ```
 python .\find_rainbow_clique.py --type gnp --k 9 --p 0.3 --nodes_per_color 1000 --heuristic True --gate True 
 

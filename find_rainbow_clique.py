@@ -211,7 +211,7 @@ def degree_nodes_in_label(graph, label_to_node, label):
     return ordered_nodes
 
 
-def sphera(graph, node_to_label, label_to_node, heuristic=True, gate_change=True, time_limit=600, greedy=False, name=None):
+def rc_detection(graph, node_to_label, label_to_node, heuristic=True, gate_change=True, time_limit=600, greedy=False, name=None):
     """
     Detection of max rainbow clique using the SPHERA algorithm.
 
@@ -331,7 +331,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Process graph type and options")
     # Flag 1: Choose between GNP or real graph
-    parser.add_argument('--type', choices=['gnp', 'real'], required=True,
+    parser.add_argument('--graph_type', choices=['gnp', 'real'], required=True,
                         help="Specify the graph type: 'gnp' for GNP graph, 'real' for a real graph")
     # Flag 2: If GNP, get tuple (k, p, nodes_per_color)
     parser.add_argument('--k', type=int, help="Number of classes (required for GNP)", default=8)
@@ -356,7 +356,6 @@ def parse_args():
     # Flag 3: Heuristic - True/False
     parser.add_argument('--heuristic', type=str_to_bool, default=True, help="Use heuristic search (default: True)")
     # Flag 4: Gate - True/False
-    # parser.add_argument('--gate', type=bool, default=True, help="Use gate (default: True)")
     parser.add_argument('--gate', type=str_to_bool, default=True, help="Use gate (default: True)")
 
     # Parse the arguments from the command line
@@ -389,7 +388,7 @@ def main():
          for node labeling. It constructs the graph using real-world data, assigns labels to the nodes (either by
          coloring or via a label file), and optionally plants a clique in the graph.
 
-    3. Clique Detection: After loading or generating the graph, it calls the `sphera()` function to find the maximum
+    3. Clique Detection: After loading or generating the graph, it calls the `rc_detection()` function to find the maximum
     rainbow clique, utilizing optional heuristic and gate parameters as specified by the user.
 
     4. Output: The function prints the maximum rainbow clique found in the graph.
@@ -397,7 +396,7 @@ def main():
     # Parse the command-line arguments
     args = parse_args()
     # Load the appropriate graph based on the user's selection
-    if args.type == 'gnp':
+    if args.graph_type == 'gnp':
         # If the graph type is GNP (Erdős–Rényi graph), generate the graph
         process_graph.generate_gnp(args.k, args.p, args.nodes_per_color)
         # Construct the file name based on the provided parameters
@@ -408,7 +407,7 @@ def main():
         # Store the loaded graph in a variable
         updated_graph = graph
 
-    elif args.type == 'real':
+    elif args.graph_type == 'real':
         # If the graph type is 'real', check if the edges file is provided
         if not args.edges_file:
             print("Error: You must specify a file directory for the real graph.")
@@ -431,9 +430,8 @@ def main():
         # If no valid graph type is specified, print an error and exit
         print("Error: You must specify the type of graph.")
         return
-    print("s")
     # Call the sphera function to find the maximum rainbow clique with the specified parameters
-    max_rainbow_clique, _ = sphera(updated_graph, node_to_label, label_to_node, args.heuristic, args.gate)
+    max_rainbow_clique, _ = rc_detection(updated_graph, node_to_label, label_to_node, args.heuristic, args.gate)
     # Output the found clique
     print("Clique found:", max_rainbow_clique)
 

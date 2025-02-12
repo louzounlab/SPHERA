@@ -134,5 +134,43 @@ def plant_clique(graph, label_to_node):
     return graph
 
 
+def get_graph_with_properties(graph_type, edges, colors):
+    if graph_type == "gnp":
+        (k, p) = edges
+        nodes_per_color = colors
+        # If the graph type is GNP (Erdős–Rényi graph), generate the graph
+        generate_gnp(k, p, nodes_per_color)
+        # Construct the file name based on the provided parameters
+        file_name = f"erdos_renyi_graph_p={p}_{k}_classes"
+        # Load the generated graph and dictionaries from the .gpickle file
+        with open(file_name, 'rb') as f:
+            graph, node_to_label, label_to_node = pickle.load(f)
+        # Store the loaded graph in a variable
+        updated_graph = graph
+    else:
+        edges_file = edges
+        # Load the real graph using the specified edges file
+        graph = create_real_graph(edges_file)
+        if graph_type == "real":
+            nodes_per_color = colors
+            # If no labels file is provided, color the nodes based on the graph's size
+            node_to_label = color_nodes(graph, nodes_per_color)
+        elif graph_type == "real_colored":
+            labels_file = colors
+            graph, node_to_label = labeled_graph(graph, labels_file)
+        else:
+            print('Error: Graph type should be: "real", "real_colored" or "gnp".')
+            return
+        # Create the label-to-node dictionary based on node-to-label
+        label_to_node = create_label_dict(node_to_label)
+        # Plant a clique in the real graph
+        graph_with_clique = plant_clique(graph, label_to_node)
+        # Update the graph variable to include the planted clique
+        updated_graph = graph_with_clique
+    return updated_graph, node_to_label, label_to_node
+
+
 if __name__ == '__main__':
-    generate_gnp(11, 0.3)
+    # generate_gnp(11, 0.3)
+    graph, node_to_label, label_to_node = get_graph_with_properties("gnp", (4, 0.3), 5)
+    print(graph)

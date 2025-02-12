@@ -215,9 +215,9 @@ def data_for_plot_prob_next(num_runs, gate_or_heuristic, option="gate", p=0.3, n
                 label_to_node = process_graph.create_label_dict(node_to_label)
                 graph = process_graph.plant_clique(graph, label_to_node)
             if option == "gate":
-                find_rainbow_clique.sphera(graph, node_to_label, label_to_node, False, gate_or_heuristic)
+                find_rainbow_clique.rc_detection(graph, node_to_label, label_to_node, False, gate_or_heuristic)
             else:
-                find_rainbow_clique.sphera(graph, node_to_label, label_to_node, gate_or_heuristic, True,
+                find_rainbow_clique.rc_detection(graph, node_to_label, label_to_node, gate_or_heuristic, True,
                                            name=k)
             filename = f'all_way_clique_{k}.txt'  # File containing cliques
             list_of_cliques = read_cliques_from_file(filename)

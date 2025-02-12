@@ -58,11 +58,11 @@ def run_experiment(ks, num_runs, p=None, mode="gnp"):
                 # Measure execution time for each option
                 start_time = time.time()
                 if option == "greedy":
-                    clique_founded, _ = find_rainbow_clique.sphera(graph, node_to_label, label_to_node, heuristic=False,
+                    clique_founded, _ = find_rainbow_clique.rc_detection(graph, node_to_label, label_to_node, heuristic=False,
                                                                    greedy=True)
                     clique_size = len(clique_founded)
                 elif option == "sphera":
-                    clique_founded, _ = find_rainbow_clique.sphera(graph, node_to_label, label_to_node, heuristic=False,
+                    clique_founded, _ = find_rainbow_clique.rc_detection(graph, node_to_label, label_to_node, heuristic=False,
                                                                    greedy=False)
                     clique_size = len(clique_founded)
                 elif option == "bk":
@@ -71,11 +71,11 @@ def run_experiment(ks, num_runs, p=None, mode="gnp"):
                                                                       [], [])
                     clique_size = len(found_cliques[-1])
                 elif option == "no_gate":
-                    clique_founded, _ = find_rainbow_clique.sphera(graph, node_to_label, label_to_node, heuristic=False,
+                    clique_founded, _ = find_rainbow_clique.rc_detection(graph, node_to_label, label_to_node, heuristic=False,
                                                                    greedy=False, gate_change=False)
                     clique_size = len(clique_founded)
                 else:
-                    clique_founded, _ = find_rainbow_clique.sphera(graph, node_to_label, label_to_node, heuristic=True,
+                    clique_founded, _ = find_rainbow_clique.rc_detection(graph, node_to_label, label_to_node, heuristic=True,
                                                                    greedy=False)
                     clique_size = len(clique_founded)
                 end_time = time.time()
