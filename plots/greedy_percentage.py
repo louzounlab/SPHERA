@@ -1,9 +1,9 @@
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-import find_rainbow_clique
+import sphera.find_rainbow_clique as find_rainbow_clique
 from matplotlib.font_manager import FontProperties
-import process_graph
+import sphera.process_graph as process_graph
 import pickle
 import glob
 

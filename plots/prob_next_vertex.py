@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import find_rainbow_clique
+import sphera.find_rainbow_clique as find_rainbow_clique
 from matplotlib.patches import Rectangle
-import process_graph
+import sphera.process_graph as process_graph
 from matplotlib.font_manager import FontProperties
 from matplotlib.gridspec import GridSpec
 

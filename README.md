@@ -62,19 +62,22 @@ python .\find_rainbow_clique.py --graph_type real --edges_file file1 --nodes_per
 
 ```
 Or use the functions in the package:
+```
+from SPHERA.sphera import find_rainbow_clique, process_graph
+```
 - For creating the graph:
 ```
-graph, node_to_label, label_to_node = sphera.get_graph_with_properties(graph_type="real",
-                                                                       edges=edges_file,
-                                                                       colors=nodes_per_color):
+graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="real",
+                                                                              edges=edges_file,
+                                                                              colors=nodes_per_color):
 ```
 - Then you can run the SPHERA algorithm:
 ```
-    rainbow_clique, _ = sphera.rc_detection(graph,
-                                            node_to_label,
-                                            label_to_node, 
-                                            heuristic, 
-                                            gate)
+rainbow_clique, _ = find_rainbow_clique.rc_detection(graph,
+                                                     node_to_label,
+                                                     label_to_node, 
+                                                     heuristic, 
+                                                     gate)
 ```
 
 Where:
@@ -117,19 +120,22 @@ python .\find_rainbow_clique.py --graph_type real --edges_file file1 --labels_fi
 
 ```
 Or use the functions in the package:
+```
+from SPHERA.sphera import find_rainbow_clique, process_graph
+```
 - For creating the graph:
 ```
-graph, node_to_label, label_to_node = sphera.get_graph_with_properties(graph_type="real_colored",
-                                                                       edges=edges_file,
-                                                                       colors=labels_file):
+graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="real_colored",
+                                                                              edges=edges_file,
+                                                                              colors=labels_file):
 ```
 - Then you can run the SPHERA algorithm:
 ```
-    rainbow_clique, _ = sphera.rc_detection(graph,
-                                            node_to_label,
-                                            label_to_node, 
-                                            heuristic, 
-                                            gate)
+rainbow_clique, _ = find_rainbow_clique.rc_detection(graph,
+                                                     node_to_label,
+                                                     label_to_node, 
+                                                     heuristic, 
+                                                     gate)
 ```
 Where:
 - `graph_type`: real (for the option of real graphs).
@@ -149,19 +155,22 @@ python .\find_rainbow_clique.py --graph_type gnp --k 9 --p 0.3 --nodes_per_color
 
 ```
 Or use the functions in the package:
+```
+from SPHERA.sphera import find_rainbow_clique, process_graph
+```
 - For creating the graph:
 ```
-graph, node_to_label, label_to_node = sphera.get_graph_with_properties(graph_type="gnp"
-                                                                       edges=(k, p),
-                                                                       colors=nodes_per_color):
+graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="gnp"
+                                                                              edges=(k, p),
+                                                                              colors=nodes_per_color):
 ```
 - Then you can run the SPHERA algorithm:
 ```
-    rainbow_clique, _ = sphera.rc_detection(graph,
-                                            node_to_label,
-                                            label_to_node, 
-                                            heuristic, 
-                                            gate)
+rainbow_clique, _ = find_rainbow_clique.rc_detection(graph,
+                                                     node_to_label,
+                                                     label_to_node, 
+                                                     heuristic, 
+                                                     gate)
 ```
 Where:
 - `graph_type`: gnp (for the option of G(n,p) graphs).
