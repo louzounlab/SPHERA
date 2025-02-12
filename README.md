@@ -58,18 +58,18 @@ _A few notes:_
 
 After preparing the files you can run SPHERA throw the command line:
 ```
-python .\find_rainbow_clique.py --graph_type real --edges_file file1 --nodes_per_color 1000 --heuristic True --gate True 
+python -m sphera.find_rainbow_clique --graph_type real --edges_file file1 --nodes_per_color 1000 --heuristic True --gate True 
 
 ```
 Or use the functions in the package:
 ```
-from SPHERA.sphera import find_rainbow_clique, process_graph
+from sphera import find_rainbow_clique, process_graph
 ```
 - For creating the graph:
 ```
 graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="real",
                                                                               edges=edges_file,
-                                                                              colors=nodes_per_color):
+                                                                              colors=nodes_per_color)
 ```
 - Then you can run the SPHERA algorithm:
 ```
@@ -116,18 +116,18 @@ _A few notes:_
 
 After preparing the files you can run SPHERA throw the command line:
 ```
-python .\find_rainbow_clique.py --graph_type real --edges_file file1 --labels_file file2 --heuristic True --gate True 
+python -m sphera.find_rainbow_clique --graph_type real --edges_file file1 --labels_file file2 --heuristic True --gate True 
 
 ```
 Or use the functions in the package:
 ```
-from SPHERA.sphera import find_rainbow_clique, process_graph
+from sphera import find_rainbow_clique, process_graph
 ```
 - For creating the graph:
 ```
 graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="real_colored",
                                                                               edges=edges_file,
-                                                                              colors=labels_file):
+                                                                              colors=labels_file)
 ```
 - Then you can run the SPHERA algorithm:
 ```
@@ -151,18 +151,18 @@ Returns: the vertices in the maximum rainbow clique.
 ### G(n, p) graphs
 Run SPHERA throw the command line:
 ```
-python .\find_rainbow_clique.py --graph_type gnp --k 9 --p 0.3 --nodes_per_color 1000 --heuristic True --gate True 
+python -m sphera.find_rainbow_clique --graph_type gnp --k 9 --p 0.3 --nodes_per_color 1000 --heuristic True --gate True 
 
 ```
 Or use the functions in the package:
 ```
-from SPHERA.sphera import find_rainbow_clique, process_graph
+from sphera import find_rainbow_clique, process_graph
 ```
 - For creating the graph:
 ```
-graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="gnp"
+graph, node_to_label, label_to_node = process_graph.get_graph_with_properties(graph_type="gnp",
                                                                               edges=(k, p),
-                                                                              colors=nodes_per_color):
+                                                                              colors=nodes_per_color)
 ```
 - Then you can run the SPHERA algorithm:
 ```

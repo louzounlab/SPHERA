@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import time
 import random
-import process_graph
+from . import process_graph
 
 
 def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nodes, skip_nodes, found_cliques=[],
