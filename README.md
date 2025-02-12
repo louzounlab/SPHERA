@@ -125,7 +125,6 @@ Where:
 
 Returns: the vertices in the maximum rainbow clique.
 
-```
 
 You can find the scripts and the simulated data in:
 ```bash
