@@ -4,9 +4,9 @@ import numpy as np
 import time
 import random
 from . import process_graph
+from collections import defaultdict
 
-
-def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nodes, skip_nodes, found_cliques=[],
+def bron_kerbosch(graph, labels, node_to_label, label_to_node_, potential_clique, remaining_nodes, skip_nodes, found_cliques=[],
                   start_time=None, timeout=600):
     """
     The Bron-Kerbosch algorithm for finding maximal cliques in a graph.
@@ -24,6 +24,12 @@ def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nod
     """
     if start_time is None:
         start_time = time.time()
+        edges_to_remove = []
+        for u, v in graph.edges():
+            if node_to_label[u] == node_to_label[v]:  # Check if both nodes have the same color
+                edges_to_remove.append((u, v))
+        # Remove the edges
+        graph.remove_edges_from(edges_to_remove)
     # Check for timeout, stop and return found cliques if timeout reached
     if time.time() - start_time > timeout:
         return found_cliques
@@ -45,7 +51,7 @@ def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nod
         # Recalculate the remaining nodes and skip list based on neighbors of the current node
         new_skip_list = [n for n in skip_nodes if n in list(graph.neighbors(node))]
         found_cliques = bron_kerbosch(
-            graph, labels, label_to_node_, new_potential_clique, new_remaining_nodes,
+            graph, labels, node_to_label, label_to_node_, new_potential_clique, new_remaining_nodes,
             new_skip_list, found_cliques, start_time, timeout
         )
         # If we found a maximal clique (with all labels), return early
@@ -57,6 +63,115 @@ def bron_kerbosch(graph, labels, label_to_node_, potential_clique, remaining_nod
         skip_nodes.append(node)
 
     return found_cliques
+
+
+def colored_bron_kerbosch(graph, labels, node_to_label, label_to_node_, potential_clique, remaining_nodes,
+                             skip_nodes,
+                             found_cliques=[],
+                             start_time=None, timeout=600):
+    """
+    Improvement of the Bron-Kerbosch algorithm for finding rainbow cliques in a graph.
+
+    :param graph: The input graph.
+    :param labels: List of all labels in the graph.
+    :param label_to_node_: Dictionary mapping labels to nodes.
+    :param node_to_label: Dictionary mapping nodes to their label.
+    :param potential_clique: Nodes currently being considered for the clique.
+    :param remaining_nodes: Nodes still available for inclusion in the clique.
+    :param skip_nodes: Nodes already processed.
+    :param found_cliques: List of cliques found so far.
+    :param start_time: The time the function started (used for timeout).
+    :param timeout: Maximum allowed time in seconds before stopping (default is 600 seconds).
+    :return: List of all cliques found in the graph up to the timeout.
+    """
+    if start_time is None:
+        start_time = time.time()
+    if time.time() - start_time > timeout:
+        return found_cliques
+
+    if len(remaining_nodes) == 0 and len(skip_nodes) == 0:
+        found_cliques.append(potential_clique)
+        return found_cliques
+
+    if len(potential_clique) == len(label_to_node_):
+        found_cliques.append(potential_clique)
+        return found_cliques
+
+    # Determine M, the smallest intersection of any unsatisfied color class with remaining_nodes
+    added_labels = {node_to_label[node] for node in potential_clique}
+    color_classes = {label: set(label_to_node_[label]) & set(remaining_nodes) for label in labels if
+                     label_to_node_[label] and label not in added_labels}
+    valid_sets = [s for s in color_classes.values() if s]
+    if valid_sets:
+        M = min(valid_sets, key=len)  # Choose the smallest valid candidate set
+    else:
+        M = remaining_nodes
+
+    for node in M:
+        if time.time() - start_time > timeout:
+            return found_cliques
+
+        new_potential_clique = potential_clique + [node]
+        new_remaining_nodes = [n for n in remaining_nodes if n in graph.neighbors(node)]
+        new_skip_list = [n for n in skip_nodes if n in graph.neighbors(node)]
+
+        found_cliques = colored_bron_kerbosch(
+            graph, labels, node_to_label, label_to_node_, new_potential_clique, new_remaining_nodes,
+            new_skip_list, found_cliques, start_time, timeout
+        )
+
+        if found_cliques and len(found_cliques[-1]) == len(label_to_node_):
+            return found_cliques
+
+        remaining_nodes.remove(node)
+        skip_nodes.append(node)
+
+    return found_cliques
+
+
+def colored_k_core(graph, node_to_label, label_to_node, first=False):
+    k = len(label_to_node)
+    original_labels = sorted(set(node_to_label.values()))
+    label_mapping = {old_label: new_index for new_index, old_label in enumerate(original_labels)}
+
+    # Initialize colors_degree with a list comprehension
+    colors_degree = {node: [0] * k for node in graph.nodes}
+
+    # Calculate colors_degree for all nodes and their neighbors
+    for node in graph.nodes:
+        for neighbor in graph.neighbors(node):
+            label = node_to_label[neighbor]
+            index = label_mapping[label]
+            colors_degree[node][index] += 1
+        label = node_to_label[node]
+        index = label_mapping[label]
+        colors_degree[node][index] += 1
+
+    # Initialize to_remove list and labels_to_remove dictionary
+    to_remove = {node for node in graph.nodes if any(value == 0 for value in colors_degree[node])}
+    # Main removal loop
+    while to_remove:
+        removed_node = to_remove.pop()
+        removed_label = node_to_label.get(removed_node, None)
+        colors_degree.pop(removed_node, None)
+        if removed_label is not None:
+            removed_index = label_mapping[removed_label]
+            # Remove the node and update neighbors
+            neighbors = list(graph.neighbors(removed_node))
+            graph.remove_node(removed_node)
+            node_to_label.pop(removed_node, None)
+            # Update the degree of neighbors
+            for neighbor in neighbors:
+                #if neighbor in colors_degree:
+                if neighbor not in to_remove:
+                    colors_degree[neighbor][removed_index] -= 1
+                    if colors_degree[neighbor][removed_index] == 0:
+                        to_remove.add(neighbor)
+
+    if first:
+        return graph, node_to_label
+    else:
+        return set(graph.nodes), -1
 
 
 def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potential_clique, remaining_nodes,
@@ -158,11 +273,16 @@ def fixed_order_barrier(graph, node_to_label, label_to_node, labels_list, potent
         if gate:
             # Check if the current clique can expand to the max clique by checking the number of labels of the clique
             # and its neighbors.
-            colors = [node_to_label[x] for x in new_remaining_nodes] + new_added_labels
-            if len(set(colors)) < len(labels_list):
+            subgraph = graph.subgraph(new_potential_clique + new_remaining_nodes).copy()
+            node_list, _ = colored_k_core(subgraph, node_to_label.copy(), label_to_node.copy())
+            if len(node_list) == 0:
                 cliques_founded = potential_clique
+            elif len(node_list) == len(label_to_node) and is_clique(graph, node_list, label_to_node, node_to_label):
+                max_cliques_founded = list(node_list)
+                return max_cliques_founded, greedy_size, first, gate
             else:
                 # Recursive call to extend the clique further
+                new_remaining_nodes = [node for node in new_remaining_nodes if node in node_list]
                 cliques_founded, greedy_size, first, gate = fixed_order_barrier(graph, node_to_label, label_to_node,
                                                                                 labels_list, new_potential_clique,
                                                                                 new_remaining_nodes, new_added_labels,
@@ -230,24 +350,15 @@ def rc_detection(graph, node_to_label, label_to_node, heuristic=True, gate_chang
     to_remove = {}
     num_labels = len(all_labels)
     if gate_change:
-        for v in list(graph.nodes):
-            if v in graph.nodes:
-                neighbor_labels = {node_to_label[neighbor] for neighbor in graph.neighbors(v) if neighbor in node_to_label}
-                if len(neighbor_labels) < num_labels - 1:
-                    label_v = node_to_label[v]
-                    if label_v not in to_remove:
-                        to_remove[label_v] = []
-                    to_remove[label_v].append(v)
-                    node_to_label.pop(v, None)
-                    graph.remove_node(v)
-        for label in to_remove:
-            set_label = set(to_remove[label])
-            current = label_to_node[label]
-            update = [node for node in current if node not in set_label]
-            label_to_node[label] = update
-        if len(node_to_label) == num_labels and is_clique(graph, graph.nodes, label_to_node, node_to_label):
-            clique = list(label_to_node.values())
+        graph, node_to_label = colored_k_core(graph, node_to_label, label_to_node, first=True)
+        if len(node_to_label) == num_labels and is_clique(graph, node_to_label.keys(), label_to_node, node_to_label):
+            clique = list(node_to_label.keys())
             return clique, -1
+        else:
+            label_to_node = defaultdict(list)
+            for node, label in node_to_label.items():
+                label_to_node[label].append(node)
+
     if heuristic:
         # Calculate the average degree of nodes for each label
         average_rank = {label: np.mean(list(graph.degree(label_to_node[label])))

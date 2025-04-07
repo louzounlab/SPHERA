@@ -94,7 +94,7 @@ def plot_for_p(p, range_k, place):
     # Plot the results
     place.plot(k_values, k_max_values, label="Max clique", color='red')
     place.plot(k_values, k_values, label="X=Y", color='blue')
-    place.plot(k_values, k_max_rainbow, label="Max rainbow clique", color='green')
+    place.plot(k_values, k_max_rainbow, label="Rainbow clique", color='green')
     for i, value in enumerate(k_max_values):
         if i == round(value):
             first_match_values = i

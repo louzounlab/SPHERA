@@ -2,7 +2,10 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import matplotlib.gridspec as gridspec
 from matplotlib.font_manager import FontProperties
+import glob
+import numpy as np
 
 # Setting font properties for consistent styling in the plot
 font = FontProperties()
@@ -38,7 +41,7 @@ def time_and_percentage_data():
     }
 
     # Define methods and files
-    methods = ["bk", "greedy", "no_gate", "sphera", "heuristic"]
+    methods = ["bk", "greedy", "cbk", "no_gate", "sphera", "heuristic"]
 
     # Initialize lists to store results for plotting
     graph_names = []
@@ -49,7 +52,7 @@ def time_and_percentage_data():
     for graph, size in clique_sizes.items():
         graph_names.append(graph)  # Store graph names for plotting
         for method in methods:
-            filename = f"../results_real_graphs/results_k={graph}_{method}_fixed.txt"
+            filename = f"../results_real_graphs_new/results_k={graph}_{method}_fixed.txt"
 
             # Load the file and calculate mean/std for time and clique size
             if os.path.exists(filename):
@@ -118,7 +121,7 @@ def subplot_boxplot(axes, method_data, graph_names_short, position):
         axes.set_ylabel('Time (seconds)', fontproperties=font)
         axes.set_yscale('log')
     # Define the mapping {current_title: new_title}
-    title_mapping = {'bk': 'BK', 'greedy': 'Greedy', 'no_gate': 'SP', 'sphera': 'SP (K-core)', 'heuristic': 'SP (Heu)'}
+    title_mapping = {'bk': 'BK', 'greedy': 'Greedy', 'cbk': 'Colored BK', 'no_gate': 'SP', 'sphera': 'SP (k-Core)', 'heuristic': 'SP (Heu)'}
 
     # Get the current tick labels
     current_titles = axes.get_xticklabels()
@@ -134,11 +137,53 @@ def subplot_boxplot(axes, method_data, graph_names_short, position):
     axes.grid(visible=True, which='both', axis='both', linewidth=0.5, alpha=0.7)
 
 
+def plot_colors_vs_time(ax, graph_names, colors):
+    graph_names_short = [name.split('.')[0] for name in graph_names]
+    ax.set_xlabel("Number of Colors", fontproperties=font)
+    ax.set_ylabel("Time (seconds)", fontproperties=font)
+    ax.set_yscale("log")
+    for label in ax.get_xticklabels():
+        label.set_fontproperties(font)
+    for label in ax.get_yticklabels():
+        label.set_fontproperties(font)
+
+    for i, graph in enumerate(graph_names):
+        short_name = graph_names_short[i]
+        color = colors[i]
+        file_pattern = f"../new_fig/{graph}_color_*_colors.txt"
+        files = sorted(glob.glob(file_pattern))
+
+        num_colors_list = []
+        times_list = []
+
+        for file in files:
+            try:
+                num_colors = int(file.split('_')[-2])  # Extract number of colors from filename
+                data = np.loadtxt(file, delimiter=',')
+                times = data[:, 0]
+
+                num_colors_list.extend([num_colors] * len(times))
+                times_list.extend(times)
+            except Exception as e:
+                print(f"Could not process {file}: {e}")
+
+        ax.scatter(num_colors_list, times_list, color=color, label=short_name)
+
+
 if __name__ == '__main__':
 
     _, all_times, graph_names_short = time_and_percentage_data()
-    fig, ax = plt.subplots(figsize=(14, 6))
-    subplot_boxplot(ax, all_times, graph_names_short, "right")  # Pass ax directly
+    fig = plt.figure(figsize=(14, 12))
+    gs = gridspec.GridSpec(2, 2, width_ratios=[50, 1], height_ratios=[1, 1])
+    # Top subplot (boxplot)
+    ax_top = fig.add_subplot(gs[0, 0])
+    subplot_boxplot(ax_top, all_times, graph_names_short, "right")  # Pass ax directly
+    # Bottom left subplot (scatter plot)
+    colors = ['brown', 'pink', 'teal', 'navy', 'gray', 'hotpink']
+    graph_names = ["artist_edges.csv", "CA-CondMat.txt", "Email-Enron.txt", "large_twitch_edges.csv",
+               "musae_git_edges.csv", "oregon1_010428.txt"]
+    ax_bottom = fig.add_subplot(gs[1, :])
+    plot_colors_vs_time(ax_bottom, graph_names, colors)
     plt.tight_layout()
     plt.savefig("Fig5.pdf", format="pdf")
     plt.show()
