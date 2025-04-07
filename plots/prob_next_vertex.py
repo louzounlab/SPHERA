@@ -24,7 +24,7 @@ font.set_size(font_size)
 def combine(p, t_min, t_max, h_min, h_max):
 
     fig = plt.figure(figsize=(15, 20))
-    gs = GridSpec(6, 2)
+    gs = GridSpec(6, 2, height_ratios=[1, 1, 1, 1, 1, 1])
     ax_h_0_no_gate = fig.add_subplot(gs[0, 0])
     ax_h_0_y_gate = fig.add_subplot(gs[0, 1])
     ax_no_gate_t = [fig.add_subplot(gs[i, 0]) for i in range(1, 4)]
@@ -36,14 +36,16 @@ def combine(p, t_min, t_max, h_min, h_max):
     plot_function_prob_with_h(p, t_min, t_max, h_min, h_max, ax_no_gate_t + ax_no_gate_h,False)
     plot_function_prob_with_h(p, t_min, t_max, h_min, h_max, ax_y_gate_t + ax_y_gate_h, True)
     plt.tight_layout()
-    plot_boxes(fig, [ax_h_0_no_gate, ax_h_0_y_gate], "red")
-    plot_boxes(fig, ax_no_gate_h + ax_y_gate_h, "green")
-    plot_boxes(fig, ax_no_gate_t + ax_y_gate_t, "blue")
+    fig.align_ylabels()  # Align y-labels
+    fig.align_xlabels()  # Align x-labels
+    width = plot_boxes(fig, ax_no_gate_h + ax_y_gate_h, "green")
+    plot_boxes(fig, [ax_h_0_no_gate, ax_h_0_y_gate], "red", width)
+    plot_boxes(fig, ax_no_gate_t + ax_y_gate_t, "blue", width)
     plt.savefig("Fig2.pdf", format="pdf")
     plt.show()
 
 
-def plot_boxes(fig, axs_list, color):
+def plot_boxes(fig, axs_list, color, width=None):
     bboxes = [ax.get_tightbbox(fig.canvas.get_renderer()) for ax in axs_list]
     bboxes_fig = [fig.transFigure.inverted().transform(bbox) for bbox in bboxes]
 
@@ -52,14 +54,15 @@ def plot_boxes(fig, axs_list, color):
     y0 = min(bbox[0, 1] for bbox in bboxes_fig)
     x1 = max(bbox[1, 0] for bbox in bboxes_fig)
     y1 = max(bbox[1, 1] for bbox in bboxes_fig)
-
-    width = x1 - x0
+    if width is None:
+        width = x1 - x0
     height = y1 - y0
 
     # Add a box around the 3-row area
     rect2 = Rectangle((x0, y0), width, height,
                       linewidth=3, edgecolor=color, facecolor='none', linestyle='-')
     fig.add_artist(rect2)
+    return width
 
 
 def delete_edges_with_same_color(graph, node_to_label):
@@ -317,7 +320,7 @@ def plot_function_prob(p, t_min, t_max, axs, gate=True):
     plot_k_data(x_11, y_11, std_11, 'brown', 'k=11')
     title = "With K-core" if gate else "Without K-core"
     axs.set_title(title, fontsize=font_size, fontproperties=font, loc='center')
-    axs.set_xlabel('t', fontsize=font_size, fontproperties=font)
+    axs.set_xlabel('n', fontsize=font_size, fontproperties=font)
     axs.set_ylabel('Probability', fontsize=font_size, fontproperties=font) if not gate else None
     # Apply the font properties to X and Y tick labels
     for label in axs.get_xticklabels() + axs.get_yticklabels():

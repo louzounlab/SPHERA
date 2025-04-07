@@ -34,7 +34,8 @@ def create_real_graph(file_path):
             nodes = delimiter_pattern.split(line.strip())
             node1 = int(nodes[0])  # Convert the first node to an integer
             node2 = int(nodes[1])  # Convert the second node to an integer
-            graph.add_edge(node1, node2)  # Add the edge between the two nodes
+            if node1 != node2:
+                graph.add_edge(node1, node2)  # Add the edge between the two nodes
     return graph
 
 

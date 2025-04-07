@@ -66,8 +66,8 @@ def run_experiment(ks, num_runs, p=None, mode="gnp"):
                                                                    greedy=False)
                     clique_size = len(clique_founded)
                 elif option == "bk":
-                    found_cliques = find_rainbow_clique.bron_kerbosch(graph.copy(), label_to_node.keys(), label_to_node,
-                                                                      [], list(graph.nodes()),
+                    found_cliques = find_rainbow_clique.bron_kerbosch(graph.copy(), label_to_node.keys(), node_to_label,
+                                                                      label_to_node, [], list(graph.nodes()),
                                                                       [], [])
                     clique_size = len(found_cliques[-1])
                 elif option == "no_gate":
@@ -103,7 +103,7 @@ def plot_gnp_results(axs):
     p_values = [0.1, 0.3, 0.5]
     all_k_values = {p: set() for p in p_values}
     methods = ['greedy', 'sphera', 'heuristic', 'no_gate']
-    title_mapping = {'greedy': 'Greedy', 'no_gate': 'SP', 'sphera': 'SP (K-core)', 'heuristic': 'SP (Heu)'}
+    title_mapping = {'greedy': 'Greedy', 'no_gate': 'SP', 'sphera': 'SP (k-Core)', 'heuristic': 'SP (Heu)'}
     data = {p: {method: {} for method in methods} for p in p_values}
     # Organize data into a dictionary from the result files
     for p in p_values:
